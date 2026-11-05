@@ -1,8 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from candidates.models import Candidate
+from recruiters.models import Recruiter
 
 User = get_user_model()
 
@@ -14,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "first_name", "last_name", "role", "date_joined"]
         read_only_fields = ["id", "email", "role", "date_joined"]
+
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """Used only for PATCH /api/auth/me/. Only first_name and last_name are writable;
@@ -35,7 +40,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 {name: ["This field cannot be changed."] for name in blocked}
             )
         return super().to_internal_value(data)
-    
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
     password2 = serializers.CharField(write_only=True, style={"input_type": "password"})
@@ -78,9 +84,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         # 'role' arrives from the view via serializer.save(role=...)
         validated_data.pop("password2")
         password = validated_data.pop("password")
-        user = User(username=validated_data["email"], **validated_data)
-        user.set_password(password)  # hashes the password (PBKDF2)
-        user.save()
+        with transaction.atomic():  # user and profile are saved together or not at all
+            user = User(username=validated_data["email"], **validated_data)
+            user.set_password(password)  # hashes the password (PBKDF2)
+            user.save()
+            if user.role == User.Role.RECRUITER:
+                Recruiter.objects.create(user=user)
+            else:
+                Candidate.objects.create(user=user)
         return user
 
 

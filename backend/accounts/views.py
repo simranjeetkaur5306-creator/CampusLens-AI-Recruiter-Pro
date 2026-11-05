@@ -7,7 +7,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
-from .permissions import IsCandidate, IsRecruiter
 from .serializers import (
     EmailTokenObtainPairSerializer,
     RegisterSerializer,
@@ -64,7 +63,7 @@ class LogoutView(APIView):
 
 
 class MeView(generics.RetrieveUpdateAPIView):
-    """GET or PATCH the logged-in user's own profile."""
+    """GET or PATCH the logged-in user's own account (name only)."""
 
     serializer_class = UserSerializer  # used for GET
     permission_classes = [IsAuthenticated]
@@ -79,18 +78,4 @@ class MeView(generics.RetrieveUpdateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response(UserSerializer(user).data)  # full profile in the response
-
-# ---- TEMPORARY: proves role-based access works. Remove in Phase 4. ----
-class CandidateOnlyCheckView(APIView):
-    permission_classes = [IsAuthenticated, IsCandidate]
-
-    def get(self, request):
-        return Response({"message": "Access granted: you are a candidate."})
-
-
-class RecruiterOnlyCheckView(APIView):
-    permission_classes = [IsAuthenticated, IsRecruiter]
-
-    def get(self, request):
-        return Response({"message": "Access granted: you are a recruiter."})
+        return Response(UserSerializer(user).data)

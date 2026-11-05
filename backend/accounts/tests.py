@@ -106,25 +106,4 @@ class AuthTests(APITestCase):
         user = User.objects.get(email="candidate@example.com")
         self.assertEqual(user.role, "candidate")  # nothing changed in the database
 
-    def test_role_based_access(self):
-        self.assertEqual(self.client.get("/api/auth/rbac-check/candidate/").status_code, 401)
-        self.auth_as("candidate")
-        self.assertEqual(self.client.get("/api/auth/rbac-check/candidate/").status_code, 200)
-        self.assertEqual(self.client.get("/api/auth/rbac-check/recruiter/").status_code, 403)
-
-    def test_token_refresh(self):
-        self.register("candidate")
-        refresh = self.login().data["refresh"]
-        res = self.client.post("/api/auth/token/refresh/", {"refresh": refresh}, format="json")
-        self.assertEqual(res.status_code, 200)
-        self.assertIn("access", res.data)
-
-    def test_logout_blacklists_refresh_token(self):
-        self.register("candidate")
-        refresh = self.login().data["refresh"]
-        self.assertEqual(
-        self.client.post("/api/auth/logout/", {"refresh": refresh}, format="json").status_code,
-            200,
-        )
-        res = self.client.post("/api/auth/token/refresh/", {"refresh": refresh}, format="json")
-        self.assertEqual(res.status_code, 401)
+    

@@ -2,12 +2,10 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
-    CandidateOnlyCheckView,
     CandidateRegisterView,
     LoginView,
     LogoutView,
     MeView,
-    RecruiterOnlyCheckView,
     RecruiterRegisterView,
 )
 
@@ -18,7 +16,4 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view()),
     path("logout/", LogoutView.as_view()),
     path("me/", MeView.as_view()),
-    # temporary role checks (removed in Phase 4)
-    path("rbac-check/candidate/", CandidateOnlyCheckView.as_view()),
-    path("rbac-check/recruiter/", RecruiterOnlyCheckView.as_view()),
 ]
