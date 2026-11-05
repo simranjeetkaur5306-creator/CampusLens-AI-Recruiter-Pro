@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: campuslens_user
       POSTGRES_PASSWORD: campuslens123
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - campuslens_pgdata:/var/lib/postgresql/data
 
