@@ -1062,7 +1062,7 @@ DB_NAME=campuslens
 DB_USER=postgres
 DB_PASSWORD=your_postgres_password
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 
 OPENAI_API_KEY=your_openai_api_key
 ```
@@ -1083,7 +1083,7 @@ DB_NAME=campuslens
 DB_USER=postgres
 DB_PASSWORD=
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 
 OPENAI_API_KEY=
 ```
