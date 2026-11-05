@@ -12,6 +12,7 @@ from .serializers import (
     EmailTokenObtainPairSerializer,
     RegisterSerializer,
     UserSerializer,
+    UserUpdateSerializer,
 )
 
 
@@ -65,13 +66,20 @@ class LogoutView(APIView):
 class MeView(generics.RetrieveUpdateAPIView):
     """GET or PATCH the logged-in user's own profile."""
 
-    serializer_class = UserSerializer
+    serializer_class = UserSerializer  # used for GET
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "patch", "head", "options"]
 
     def get_object(self):
         return self.request.user
 
+    def update(self, request, *args, **kwargs):
+        serializer = UserUpdateSerializer(
+            self.get_object(), data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data)  # full profile in the response
 
 # ---- TEMPORARY: proves role-based access works. Remove in Phase 4. ----
 class CandidateOnlyCheckView(APIView):

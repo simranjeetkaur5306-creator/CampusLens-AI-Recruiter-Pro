@@ -15,7 +15,27 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "first_name", "last_name", "role", "date_joined"]
         read_only_fields = ["id", "email", "role", "date_joined"]
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """Used only for PATCH /api/auth/me/. Only first_name and last_name are writable;
+    submitting any protected field is rejected with a 400."""
 
+    PROTECTED_FIELDS = (
+        "id", "email", "role", "username", "password",
+        "date_joined", "is_active", "is_staff", "is_superuser",
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name"]
+
+    def to_internal_value(self, data):
+        blocked = [name for name in self.PROTECTED_FIELDS if name in data]
+        if blocked:
+            raise serializers.ValidationError(
+                {name: ["This field cannot be changed."] for name in blocked}
+            )
+        return super().to_internal_value(data)
+    
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
     password2 = serializers.CharField(write_only=True, style={"input_type": "password"})

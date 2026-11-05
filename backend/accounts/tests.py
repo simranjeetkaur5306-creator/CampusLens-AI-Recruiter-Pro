@@ -19,8 +19,10 @@ def payload(email="alice@example.com", **extra):
 
 class AuthTests(APITestCase):
     def register(self, endpoint="candidate", **kw):
-        return self.client.post(f"/api/auth/register/{endpoint}/", payload(**kw), format="json")
-    
+        return self.client.post(
+            f"/api/auth/register/{endpoint}/", payload(**kw), format="json"
+        )
+
     def login(self, email="alice@example.com", password=PASSWORD):
         return self.client.post(
             "/api/auth/login/", {"email": email, "password": password}, format="json"
@@ -83,15 +85,26 @@ class AuthTests(APITestCase):
     def test_me_requires_authentication(self):
         self.assertEqual(self.client.get("/api/auth/me/").status_code, 401)
 
-    def test_me_get_and_update_but_not_role(self):
+    def test_me_get_and_update_allowed_fields(self):
         self.auth_as("candidate")
         self.assertEqual(self.client.get("/api/auth/me/").status_code, 200)
         res = self.client.patch(
-            "/api/auth/me/", {"first_name": "Asha", "role": "recruiter"}, format="json"
+            "/api/auth/me/", {"first_name": "Asha", "last_name": "Kaur"}, format="json"
         )
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["first_name"], "Asha")
-        self.assertEqual(res.data["role"], "candidate")  # role change ignored
+        self.assertEqual(res.data["role"], "candidate")
+
+    def test_me_rejects_protected_fields(self):
+        self.auth_as("candidate")
+        res = self.client.patch(
+            "/api/auth/me/", {"role": "recruiter", "email": "x@x.com"}, format="json"
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("role", res.data["errors"])
+        self.assertIn("email", res.data["errors"])
+        user = User.objects.get(email="candidate@example.com")
+        self.assertEqual(user.role, "candidate")  # nothing changed in the database
 
     def test_role_based_access(self):
         self.assertEqual(self.client.get("/api/auth/rbac-check/candidate/").status_code, 401)
@@ -110,7 +123,8 @@ class AuthTests(APITestCase):
         self.register("candidate")
         refresh = self.login().data["refresh"]
         self.assertEqual(
-            self.client.post("/api/auth/logout/", {"refresh": refresh}, format="json").status_code, 200
+        self.client.post("/api/auth/logout/", {"refresh": refresh}, format="json").status_code,
+            200,
         )
         res = self.client.post("/api/auth/token/refresh/", {"refresh": refresh}, format="json")
         self.assertEqual(res.status_code, 401)
