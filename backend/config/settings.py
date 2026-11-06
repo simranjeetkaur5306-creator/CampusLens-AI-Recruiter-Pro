@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "accounts",
     "candidates",
     "recruiters",
+    "resumes",
 ]
 
 MIDDLEWARE = [
@@ -137,3 +138,9 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"  # uploaded resumes (git-ignored)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ---------- Resume uploads ----------
+RESUME_MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+RESUME_MAX_PER_CANDIDATE = 5
+RESUME_ALLOWED_EXTENSIONS = (".pdf", ".docx")
