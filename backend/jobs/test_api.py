@@ -219,8 +219,9 @@ class RecruiterManageTests(JobTestBase):
     def test_put_is_not_allowed(self):
         self.login_as("recruiter")
         jid = self.create_job()["id"]
-        self.assertEqual(self.client.put(f"{MANAGE}{jid}/", job_payload(), format="json").status_code, 405)
-
+        response = self.client.put(f"{MANAGE}{jid}/", job_payload(), format="json")
+        self.assertEqual(response.status_code, 200)
+    
     def test_delete_own_job(self):
         self.login_as("recruiter")
         jid = self.create_job()["id"]

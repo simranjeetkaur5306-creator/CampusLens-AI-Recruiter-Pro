@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "recruiters",
     "resumes",
     "jobs",
+    "matching",
 ]
 
 MIDDLEWARE = [
@@ -145,3 +146,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 RESUME_MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 RESUME_MAX_PER_CANDIDATE = 5
 RESUME_ALLOWED_EXTENSIONS = (".pdf", ".docx")
+
+# ---------- Embeddings (Phase 7) ----------
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_DIMENSIONS = 384  # must match the model (and, in Phase 8, the pgvector column)
+EMBEDDING_CHUNK_WORDS = 128
+EMBEDDING_CHUNK_OVERLAP = 20
+EMBEDDING_MAX_CHUNKS = 16

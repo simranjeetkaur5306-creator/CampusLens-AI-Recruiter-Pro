@@ -8,3 +8,5 @@ python-dotenv
 PyMuPDF
 Python-docx
 openai
+sentence-transformers
+numpy
