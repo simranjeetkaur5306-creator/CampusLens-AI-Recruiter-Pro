@@ -2,12 +2,15 @@ from django.db import transaction
 from rest_framework import serializers
 
 from core.serializers import StrictWritableFieldsMixin
+from matching.services.storage import embed_job_safely
 from recruiters.models import Recruiter
 
 from .models import Job
 from .services import resolve_skills
 
 MAX_SKILLS_PER_JOB = 30
+# editing any of these changes what the job MEANS, so its embedding must be rebuilt
+EMBEDDING_FIELDS = {"job_title", "description", "required_experience", "required_education"}
 
 
 class SkillNamesField(serializers.ListField):
@@ -72,12 +75,16 @@ class JobSerializer(StrictWritableFieldsMixin, serializers.ModelSerializer):
         with transaction.atomic():
             job = Job.objects.create(**validated_data)  # recruiter comes from serializer.save(recruiter=...)
             job.required_skills.set(resolve_skills(skills))
+        embed_job_safely(job)  # never fails the request; `manage.py embed_all` can retry later
         return job
 
     def update(self, instance, validated_data):
         skills = validated_data.pop("required_skills", None)
+        meaning_changed = skills is not None or bool(EMBEDDING_FIELDS & set(validated_data))
         with transaction.atomic():
             instance = super().update(instance, validated_data)
             if skills is not None:
                 instance.required_skills.set(resolve_skills(skills))
+        if meaning_changed:
+            embed_job_safely(instance)
         return instance

@@ -1,6 +1,6 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
-
+from pgvector.django import HnswIndex, VectorField
 from recruiters.models import Recruiter
 from resumes.models import Skill
 
@@ -33,11 +33,21 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # The embedding vector column is added in Phase 7.
+    # Semantic vector (Phase 8). 384 = output size of all-MiniLM-L6-v2; keep in sync with
+    # settings.EMBEDDING_DIMENSIONS. NULL until the job has been embedded.
+    embedding = VectorField(dimensions=384, null=True, blank=True)
+    embedding_model = models.CharField(max_length=100, blank=True)
+    embedded_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["is_active", "-created_at"])]
-
-    def __str__(self):
-        return f"{self.job_title} at {self.company_name}"
+        indexes = [
+            models.Index(fields=["is_active", "-created_at"]),
+            HnswIndex(
+                name="job_embedding_hnsw",
+                fields=["embedding"],
+                m=16,
+                ef_construction=64,
+                opclasses=["vector_cosine_ops"],
+            ),
+        ]

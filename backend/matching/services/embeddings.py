@@ -11,6 +11,7 @@ from ..exceptions import EmbeddingError
 logger = logging.getLogger(__name__)
 
 _model = None
+_fake_model = None
 _model_lock = threading.Lock()
 
 _URL_RE = re.compile(r"https?://\S+|www\.\S+|(?:linkedin|github)\.com/\S+", re.I)
@@ -23,7 +24,14 @@ _PHONE_RE = re.compile(r"\+?\d[\d\s().\-]{8,}\d")
 # ----------------------------------------------------------------------
 def get_model():
     """Loads the sentence-embedding model on first use and keeps it in memory."""
-    global _model
+    global _model, _fake_model
+    if getattr(settings, "EMBEDDING_FAKE", False):  # True only while running `manage.py test`
+        if _fake_model is None:
+            from ..fakes import FakeModel
+
+            _fake_model = FakeModel()
+        return _fake_model
+        
     if _model is None:
         with _model_lock:
             if _model is None:

@@ -14,4 +14,5 @@ class ResumeAdmin(admin.ModelAdmin):
     list_display = ("original_filename", "candidate", "parsing_status", "is_active", "uploaded_at")
     list_filter = ("parsing_status", "is_active", "file_type")
     search_fields = ("original_filename", "candidate__user__email")
-    readonly_fields = ("uploaded_at", "parsed_at")
+    exclude = ("embedding",)
+    readonly_fields = ("uploaded_at", "parsed_at", "embedding_model", "embedded_at")

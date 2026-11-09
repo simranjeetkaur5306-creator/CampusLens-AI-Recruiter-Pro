@@ -6,6 +6,8 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from matching.services.storage import embed_resume_safely
+
 from ..exceptions import ResumeFileError, ResumeParseError
 from ..models import Resume, Skill
 from ..validators import validate_resume_file
@@ -78,6 +80,8 @@ def upload_resume(candidate, uploaded_file):
         if name.startswith("resumes/"):
             resume.file.storage.delete(name)
         raise
+    if parsed:
+        embed_resume_safely(resume)
     return resume
 
 

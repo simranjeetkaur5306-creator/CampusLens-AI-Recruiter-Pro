@@ -169,6 +169,7 @@ class EmbedTextTests(SimpleTestCase):
                 with self.assertRaises(EmbeddingError):
                     embed_text("Python developer with Django and SQL experience")
 
+    @override_settings(EMBEDDING_FAKE=False)
     def test_missing_library_gives_a_clear_error(self):
         with mock.patch.object(embeddings, "_model", None):
             with mock.patch.dict(sys.modules, {"sentence_transformers": None}):
@@ -177,7 +178,7 @@ class EmbedTextTests(SimpleTestCase):
                         embeddings.get_model()
         self.assertIn("could not be loaded", str(ctx.exception))
 
-    @override_settings(EMBEDDING_DIMENSIONS=999)
+    @override_settings(EMBEDDING_DIMENSIONS=999, EMBEDDING_FAKE=False)
     def test_dimension_mismatch_between_model_and_setting_is_reported(self):
         fake_module = mock.Mock()
         fake_module.SentenceTransformer.return_value.get_sentence_embedding_dimension.return_value = 384
@@ -280,6 +281,7 @@ class EmbeddingDemoCommandTests(SimpleTestCase):
 
 
 @skipUnless(os.environ.get("RUN_REAL_EMBEDDING_TESTS") == "1", "set RUN_REAL_EMBEDDING_TESTS=1 to test the real model")
+@override_settings(EMBEDDING_FAKE=False)
 class RealModelTests(SimpleTestCase):
     """Uses the REAL model (downloads it on first use). Optional: run on your own computer."""
 

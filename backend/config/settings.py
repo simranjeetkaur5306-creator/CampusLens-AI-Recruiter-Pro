@@ -1,3 +1,4 @@
+import sys
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     # Third party
     "rest_framework",
     "rest_framework_simplejwt",
