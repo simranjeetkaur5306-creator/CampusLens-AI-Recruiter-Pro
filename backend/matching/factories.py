@@ -51,3 +51,23 @@ def vector(*head):
 def set_embedding(obj, values):
     type(obj).objects.filter(pk=obj.pk).update(embedding=values)
     obj.refresh_from_db()
+
+
+
+PASSWORD = "StrongPass#2026"
+
+
+class LoginMixin:
+    """For APITestCase classes: register a user through the API, log in and keep the token."""
+
+    def login_as(self, role, email=None):
+        email = email or f"{role}@example.com"
+        self.client.credentials()
+        self.client.post(
+            f"/api/auth/register/{role}/",
+            {"email": email, "first_name": "Test", "last_name": "User", "password": PASSWORD, "password2": PASSWORD},
+            format="json",
+        )
+        token = self.client.post("/api/auth/login/", {"email": email, "password": PASSWORD}, format="json").data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        return User.objects.get(email=email)

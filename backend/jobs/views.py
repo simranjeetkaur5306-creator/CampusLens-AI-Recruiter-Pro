@@ -1,3 +1,6 @@
+from django.db.models import ProtectedError
+from rest_framework.exceptions import APIException
+
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,6 +15,13 @@ from .serializers import JobSerializer
 CANDIDATE_ONLY = [IsAuthenticated, IsCandidate]
 RECRUITER_ONLY = [IsAuthenticated, IsRecruiter]
 
+class JobHasApplications(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = (
+        "This job already has applications, so it cannot be deleted. "
+        "Unpublish it instead (set is_active to false)."
+    )
+    default_code = "job_has_applications"
 
 def with_skills(queryset):
     return queryset.prefetch_related("required_skills")
@@ -59,5 +69,9 @@ class RecruiterJobDetailView(generics.RetrieveUpdateDestroyAPIView):
         return with_skills(Job.objects.filter(recruiter__user=self.request.user))
 
     def destroy(self, request, *args, **kwargs):
-        self.get_object().delete()
+        job = self.get_object()
+        try:
+            job.delete()
+        except ProtectedError:  # applications point at this job (see applications.Application)
+            raise JobHasApplications()
         return Response({"message": "Job deleted."}, status=status.HTTP_200_OK)

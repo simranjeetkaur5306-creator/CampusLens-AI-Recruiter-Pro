@@ -63,7 +63,7 @@ class Resume(models.Model):
     certifications = models.JSONField(default=list, blank=True)
     skills = models.ManyToManyField(Skill, related_name="resumes", blank=True)
 
-        # Semantic vector (Phase 8). 384 = output size of all-MiniLM-L6-v2; keep in sync with
+    # Semantic vector (Phase 8). 384 = output size of all-MiniLM-L6-v2; keep in sync with
     # settings.EMBEDDING_DIMENSIONS. NULL until the resume has been embedded.
     embedding = VectorField(dimensions=384, null=True, blank=True)
     embedding_model = models.CharField(max_length=100, blank=True)

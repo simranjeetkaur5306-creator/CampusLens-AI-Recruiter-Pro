@@ -31,7 +31,7 @@ def get_model():
 
             _fake_model = FakeModel()
         return _fake_model
-        
+    
     if _model is None:
         with _model_lock:
             if _model is None:
