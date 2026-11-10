@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "jobs",
     "matching",
     "applications",
+    "skillgap",
 ]
 
 MIDDLEWARE = [

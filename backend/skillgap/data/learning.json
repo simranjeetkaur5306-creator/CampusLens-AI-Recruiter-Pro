@@ -1,0 +1,250 @@
+{
+  "skills": {
+    "Python": {
+      "topics": ["Core syntax, data types and control flow", "Functions, modules and virtual environments", "Classes and error handling", "Working with files and JSON", "Testing with pytest"],
+      "project": "Build a command-line expense tracker that saves its data to a JSON file and has unit tests."
+    },
+    "SQL": {
+      "topics": ["SELECT, WHERE, ORDER BY and GROUP BY", "JOINs across several tables", "Subqueries and window functions", "Designing tables with keys and constraints", "Reading query plans and adding indexes"],
+      "project": "Design a small library database, load sample data and answer ten business questions with queries."
+    },
+    "Machine Learning": {
+      "topics": ["Supervised versus unsupervised learning", "Train/test split and cross-validation", "Common classification and regression algorithms", "Metrics such as accuracy, precision, recall and RMSE", "Overfitting, regularisation and feature engineering"],
+      "project": "Predict customer churn or house prices from a public dataset and explain which features matter most."
+    },
+    "Deep Learning": {
+      "topics": ["Neurons, layers, activation functions and backpropagation", "Training loops, optimisers and learning rates", "CNNs for images and Transformers for sequences", "Dropout, early stopping and other regularisation", "Tracking experiments"],
+      "project": "Train an image classifier on a small public dataset and compare it with a simple baseline."
+    },
+    "Natural Language Processing": {
+      "topics": ["Tokenisation, stop-words and text cleaning", "Bag-of-words, TF-IDF and word embeddings", "Text classification and named-entity recognition", "Transformer models and fine-tuning basics", "Evaluating text models"],
+      "project": "Build a sentiment classifier for product reviews and study the reviews it gets wrong."
+    },
+    "Large Language Models": {
+      "topics": ["How transformers work at a high level", "Prompting and its limits", "Embeddings and retrieval", "Evaluating and guarding model output", "Calling a model through an API"],
+      "project": "Build a question-answering assistant over a small set of documents and measure how often its answers are correct."
+    },
+    "Embeddings": {
+      "topics": ["What an embedding is", "Cosine similarity", "Sentence embedding models", "Vector search and indexes", "Evaluating retrieval quality"],
+      "project": "Build a semantic search over 100 short documents and compare it with plain keyword search."
+    },
+    "Computer Vision": {
+      "topics": ["Images as arrays and basic filters", "Convolutional neural networks", "Classification versus detection", "Data augmentation", "Evaluating vision models"],
+      "project": "Build a classifier that recognises a few object types from photos you collect yourself."
+    },
+    "Scikit-learn": {
+      "topics": ["Pipelines and preprocessing", "Train/test split and cross-validation", "Common classifiers and regressors", "Metrics and confusion matrices", "Hyperparameter tuning"],
+      "project": "Build a classification pipeline with cross-validation and report which model performs best."
+    },
+    "TensorFlow": {
+      "topics": ["Tensors and automatic differentiation", "Building models with Keras layers", "Training, callbacks and saving models", "Input pipelines with tf.data", "Deploying a trained model"],
+      "project": "Train a small neural network on a public dataset and export it for a simple prediction script."
+    },
+    "PyTorch": {
+      "topics": ["Tensors and autograd", "Defining models with nn.Module", "Writing a training loop", "Datasets and DataLoaders", "Saving and loading models"],
+      "project": "Implement and train a small classifier in PyTorch and plot its training curves."
+    },
+    "Pandas": {
+      "topics": ["Series and DataFrames", "Selecting, filtering and sorting", "Group-by and aggregation", "Merging and reshaping tables", "Missing values and dates"],
+      "project": "Clean a messy public CSV file and publish a short analysis notebook."
+    },
+    "NumPy": {
+      "topics": ["Arrays and vectorised operations", "Indexing and broadcasting", "Linear algebra basics", "Random numbers and statistics", "Speed compared with Python loops"],
+      "project": "Implement linear regression with NumPy only and compare it with scikit-learn."
+    },
+    "Django": {
+      "topics": ["Models, migrations and the ORM", "Views, URLs and templates", "Forms, authentication and permissions", "The admin site and settings", "Tests for views and models"],
+      "project": "Build a blog or task manager with user login and create/read/update/delete pages."
+    },
+    "Django REST Framework": {
+      "topics": ["Serializers and validation", "ViewSets, routers and permissions", "Token or JWT authentication", "Pagination, filtering and error handling", "Testing APIs with APITestCase"],
+      "project": "Turn a to-do app into a JWT-protected REST API and test every endpoint in Postman."
+    },
+    "Flask": {
+      "topics": ["Routes and request handling", "Templates and forms", "Blueprints and configuration", "Databases with SQLAlchemy", "Testing a Flask app"],
+      "project": "Build a small notes app with Flask and a SQLite database."
+    },
+    "FastAPI": {
+      "topics": ["Path and query parameters", "Pydantic models and validation", "Dependency injection", "Async endpoints", "Automatic API documentation"],
+      "project": "Build a small inventory API with validation and generated documentation."
+    },
+    "REST API": {
+      "topics": ["HTTP methods and status codes", "Resource design and URL naming", "Authentication and authorisation", "Input validation and error responses", "API documentation and testing"],
+      "project": "Design and document a small bookstore API with at least four endpoints and tests."
+    },
+    "GraphQL": {
+      "topics": ["Schemas, queries and mutations", "Resolvers", "Pagination patterns", "Authentication", "GraphQL versus REST trade-offs"],
+      "project": "Expose a small movie database through a GraphQL API and query it from a script."
+    },
+    "Microservices": {
+      "topics": ["Splitting a system into services", "Service-to-service communication", "Data ownership per service", "Containers and orchestration basics", "Monitoring and failure handling"],
+      "project": "Split a small shop application into two services that talk over HTTP."
+    },
+    "JavaScript": {
+      "topics": ["Variables, functions and ES6 syntax", "Arrays, objects and array methods", "The DOM and events", "Promises and async/await", "Fetching data from an API"],
+      "project": "Build a to-do list that stores items in the browser and loads sample data from an API."
+    },
+    "TypeScript": {
+      "topics": ["Types, interfaces and generics", "Configuring tsconfig", "Typing functions and component props", "Union types and narrowing", "Migrating a JavaScript file"],
+      "project": "Convert a small JavaScript project to TypeScript and fix every type error."
+    },
+    "React": {
+      "topics": ["Components, props and state", "Hooks such as useState and useEffect", "Routing and forms", "Fetching data from an API", "Component testing basics"],
+      "project": "Build a job-board front end that lists jobs from a mock API with filters."
+    },
+    "Node.js": {
+      "topics": ["The event loop and modules", "Building a server with Express", "Files and streams", "Environment variables and configuration", "Connecting to a database"],
+      "project": "Build a small REST API with Node.js and Express backed by a database."
+    },
+    "HTML": {
+      "topics": ["Semantic elements", "Forms and accessibility", "Links, images and metadata", "Responsive layout basics"],
+      "project": "Build a personal portfolio page with a contact form."
+    },
+    "CSS": {
+      "topics": ["Selectors and the box model", "Flexbox and grid", "Responsive design with media queries", "Variables and transitions"],
+      "project": "Recreate a landing-page layout from a screenshot."
+    },
+    "Java": {
+      "topics": ["Classes, objects and interfaces", "Collections and generics", "Exceptions and streams", "Build tools such as Maven or Gradle", "Unit testing with JUnit"],
+      "project": "Build a console library-management system with unit tests."
+    },
+    "C++": {
+      "topics": ["Syntax, pointers and references", "Classes and the standard library", "Memory management and RAII", "Templates", "Building with CMake"],
+      "project": "Implement a small text-adventure game that uses classes and the standard containers."
+    },
+    "Docker": {
+      "topics": ["Images, containers and Dockerfiles", "Volumes and networks", "docker compose for multi-service apps", "Environment variables and secrets", "Keeping images small"],
+      "project": "Containerise a web app and its database with docker compose."
+    },
+    "Kubernetes": {
+      "topics": ["Pods, deployments and services", "ConfigMaps and secrets", "Scaling and rolling updates", "Namespaces and troubleshooting with kubectl", "Running a local cluster"],
+      "project": "Deploy a containerised app to a local cluster with two replicas behind a service."
+    },
+    "AWS": {
+      "topics": ["IAM users and permissions", "EC2, S3 and RDS basics", "Networking: VPC and security groups", "Monitoring and cost awareness", "Deploying a simple web app"],
+      "project": "Host a static website on S3 and deploy a small API on a free-tier virtual machine."
+    },
+    "CI/CD": {
+      "topics": ["Continuous integration concepts", "A pipeline that runs tests on every push", "Building and publishing artefacts", "Deployment strategies", "Handling secrets in pipelines"],
+      "project": "Set up GitHub Actions to run tests and linting on every push to a repository."
+    },
+    "Linux": {
+      "topics": ["Files, permissions and processes", "Shell commands and pipes", "Package managers", "Basic shell scripting", "SSH and reading logs"],
+      "project": "Write a shell script that backs up a folder and rotates old backups."
+    },
+    "Git": {
+      "topics": ["Commits, branches and merging", "Resolving merge conflicts", "Pull requests and code review", "Rebasing and stashing", "Writing clear commit messages"],
+      "project": "Contribute a small fix to an open-source repository through a pull request."
+    },
+    "PostgreSQL": {
+      "topics": ["Data types, indexes and constraints", "Joins, CTEs and window functions", "Transactions and isolation", "Query plans with EXPLAIN", "Backups and extensions"],
+      "project": "Model a booking system in PostgreSQL and speed up its slowest query with an index."
+    },
+    "MongoDB": {
+      "topics": ["Documents and collections", "CRUD queries and the aggregation pipeline", "Indexes", "Schema design: embedding versus referencing", "Using MongoDB from a backend app"],
+      "project": "Store and query blog posts with comments in MongoDB from a small API."
+    },
+    "Redis": {
+      "topics": ["Strings, hashes, lists and sets", "Expiry and caching patterns", "Persistence options", "Pub/sub basics", "Using Redis from an application"],
+      "project": "Add Redis caching to a slow API endpoint and measure the difference."
+    },
+    "Data Analysis": {
+      "topics": ["Asking a clear question and choosing metrics", "Cleaning and exploring data", "Descriptive statistics and grouping", "Visualising findings", "Writing up conclusions"],
+      "project": "Analyse a public sales dataset and present three insights with charts."
+    },
+    "Data Visualization": {
+      "topics": ["Choosing the right chart", "Colour and labelling basics", "Dashboards for non-technical readers", "Plotting libraries or BI tools", "Avoiding misleading charts"],
+      "project": "Build a one-page dashboard for a public dataset."
+    },
+    "Power BI": {
+      "topics": ["Importing and modelling data", "DAX measures basics", "Charts, filters and slicers", "Publishing reports", "Data refresh and sharing"],
+      "project": "Build a sales dashboard with at least five visuals and two slicers."
+    },
+    "Tableau": {
+      "topics": ["Connecting to data", "Dimensions and measures", "Charts, filters and parameters", "Building dashboards", "Publishing and sharing"],
+      "project": "Build an interactive dashboard that explores a public dataset."
+    },
+    "Microsoft Excel": {
+      "topics": ["Formulas and lookups", "Pivot tables and charts", "Data cleaning with Power Query", "Conditional formatting and validation", "Basic automation with macros"],
+      "project": "Build a personal budget workbook with a pivot-table summary."
+    },
+    "Statistics": {
+      "topics": ["Mean, variance and distributions", "Hypothesis testing and p-values", "Confidence intervals", "Correlation versus causation", "A/B testing basics"],
+      "project": "Run and write up an A/B test analysis on a sample dataset."
+    },
+    "Data Structures": {
+      "topics": ["Arrays, linked lists, stacks and queues", "Hash tables", "Trees and graphs", "Heaps", "Choosing the right structure"],
+      "project": "Implement five data structures from scratch and test them."
+    },
+    "Algorithms": {
+      "topics": ["Big-O analysis", "Sorting and searching", "Recursion and dynamic programming", "Graph traversal and shortest paths", "Regular problem-solving practice"],
+      "project": "Solve 30 practice problems and write down the time complexity of each solution."
+    },
+    "Object-Oriented Programming": {
+      "topics": ["Classes and objects", "Encapsulation and inheritance", "Polymorphism and interfaces", "SOLID principles", "Common design patterns"],
+      "project": "Model a parking-lot system with classes and write tests for it."
+    },
+    "DBMS": {
+      "topics": ["The relational model and keys", "Normalisation", "Transactions and ACID", "Indexing", "Concurrency control"],
+      "project": "Normalise a messy spreadsheet into a set of related tables and explain each design choice."
+    },
+    "System Design": {
+      "topics": ["Requirements and estimating scale", "Databases, caching and queues", "Load balancing and scaling", "Consistency and availability trade-offs", "Monitoring"],
+      "project": "Draw and explain the design of a URL shortener."
+    },
+    "Agile": {
+      "topics": ["Scrum roles and ceremonies", "User stories and backlogs", "Sprint planning and retrospectives", "Kanban basics", "Estimating work"],
+      "project": "Plan a small project on a Kanban board with two one-week sprints."
+    }
+  },
+  "category_defaults": {
+    "Programming Languages": {
+      "topics": ["Core syntax and data types", "Control flow and functions", "The standard library", "Writing and running tests"],
+      "project": "Solve 20 practice problems in {skill} and build one small program with it."
+    },
+    "Web Development": {
+      "topics": ["Fundamentals and project setup", "Building reusable pages or components", "Connecting to an API", "Debugging and testing"],
+      "project": "Build a small web app that uses {skill} and deploy it."
+    },
+    "Mobile Development": {
+      "topics": ["Project setup and the basic building blocks", "Navigation and state", "Calling an API", "Testing on a device or emulator"],
+      "project": "Build a small app with {skill} that shows data from a public API."
+    },
+    "Backend": {
+      "topics": ["The core concepts of {skill}", "Building a small service with it", "Authentication and validation", "Testing and error handling"],
+      "project": "Build a small backend service that uses {skill} and test it with Postman."
+    },
+    "Databases": {
+      "topics": ["Data modelling basics for {skill}", "Reading and writing data", "Indexes and performance", "Using it from an application"],
+      "project": "Store the data of a small app in {skill} and write five useful queries."
+    },
+    "AI/ML": {
+      "topics": ["The core idea behind {skill}", "A beginner tutorial from its official documentation", "A small experiment on a public dataset", "How to evaluate the results"],
+      "project": "Build a small experiment with {skill}, measure its results and write up what you learned."
+    },
+    "Data & Analytics": {
+      "topics": ["The core features of {skill}", "Cleaning and preparing data", "Producing a first analysis or report", "Presenting the findings"],
+      "project": "Analyse a public dataset with {skill} and present your findings."
+    },
+    "Cloud & DevOps": {
+      "topics": ["The core concepts of {skill}", "A hands-on setup on your own machine or a free tier", "Automating a repeated task", "Troubleshooting basics"],
+      "project": "Use {skill} to deploy or automate something small and document the steps."
+    },
+    "Tools": {
+      "topics": ["Installing and configuring {skill}", "The five most common workflows", "Keyboard shortcuts and tips", "Using it in a team project"],
+      "project": "Use {skill} throughout one small project and note what it saved you."
+    },
+    "Methodologies": {
+      "topics": ["The principles behind {skill}", "Common roles and ceremonies", "Applying it to a small team project", "Typical mistakes to avoid"],
+      "project": "Run a short project with classmates using {skill} and hold a retrospective."
+    },
+    "Computer Science": {
+      "topics": ["The core concepts of {skill}", "Worked examples from a textbook or course", "Practice problems", "How it appears in interviews"],
+      "project": "Write a short explanation of {skill} with a small code example."
+    }
+  },
+  "default": {
+    "topics": ["The core concepts of {skill}", "A beginner tutorial from the official documentation or a trusted course", "A small hands-on exercise", "How {skill} is used in real projects"],
+    "project": "Build a small project that uses {skill} and add it to your portfolio."
+  }
+}
