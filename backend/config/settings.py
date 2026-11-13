@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR.parent / ".env")
 
+# True while running `python manage.py test`
+TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
+
 
 def env_list(name, default=""):
     return [v.strip() for v in os.getenv(name, default).split(",") if v.strip()]
@@ -45,6 +48,7 @@ INSTALLED_APPS = [
     "matching",
     "applications",
     "skillgap",
+    "interviews",
 ]
 
 MIDDLEWARE = [
@@ -115,6 +119,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "EXCEPTION_HANDLER": "core.exceptions.custom_exception_handler",
+    # Requests per user to the endpoints that call Gemini (they use API quota); see ScopedRateThrottle
+    "DEFAULT_THROTTLE_RATES": {"ai": os.getenv("AI_RATE_LIMIT", "20/hour")},
 }
 
 # ---------- Simple JWT ----------
@@ -157,3 +163,11 @@ EMBEDDING_DIMENSIONS = 384  # must match the model (and, in Phase 8, the pgvecto
 EMBEDDING_CHUNK_WORDS = 128
 EMBEDDING_CHUNK_OVERLAP = 20
 EMBEDDING_MAX_CHUNKS = 16
+EMBEDDING_FAKE = TESTING  # tests use matching/fakes.py instead of downloading the real model
+
+# ---------- Google Gemini LLM (Phase 11) ----------
+# Used for interview questions and skill-gap summaries. Matching and ranking do NOT use it.
+GEMINI_API_KEY = "" if TESTING else os.getenv("GEMINI_API_KEY", "")  # tests never call the real API
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_TIMEOUT_SECONDS = float(os.getenv("GEMINI_TIMEOUT_SECONDS", "60"))
+GEMINI_MAX_RETRIES = 2  # retried with exponential backoff only on rate limits, timeouts and server errors

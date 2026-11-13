@@ -7,6 +7,6 @@ pgvector
 python-dotenv
 PyMuPDF
 Python-docx
-openai
+google-genai
 sentence-transformers
 numpy
