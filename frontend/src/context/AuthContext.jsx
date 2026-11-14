@@ -35,14 +35,24 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const { data } = await api.post(ENDPOINTS.login, { email, password });
     tokenStore.set(data.access, data.refresh);
-    const me = await api.get(ENDPOINTS.me);
-    setUser(me.data);
-    return me.data;
+    // The login response already contains the user; fall back to /me if it does not.
+    const me = data.user ?? (await api.get(ENDPOINTS.me)).data;
+    setUser(me);
+    return me;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refresh = tokenStore.refresh;
     tokenStore.clear();
     setUser(null);
+    if (refresh) {
+      // Best effort: ask the server to blacklist the refresh token. Failure changes nothing for the user.
+      try {
+        await api.post(ENDPOINTS.logout, { refresh });
+      } catch {
+        /* ignore */
+      }
+    }
   };
 
   return (

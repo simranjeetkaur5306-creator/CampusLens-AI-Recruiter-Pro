@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ENDPOINTS } from "./endpoints";
+import { errorMessage, fetchAllPages } from "./http";
 
 const BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -54,15 +55,10 @@ api.interceptors.response.use(
   }
 );
 
-export function errorMessage(err) {
-  if (!err.response) return "Cannot reach the server. Is the backend running?";
-  const data = err.response.data;
-  if (typeof data === "string") return "Something went wrong. Please try again.";
-  if (data?.detail) return data.detail;
-  const first = data && Object.values(data)[0];
-  if (Array.isArray(first)) return first[0];
-  if (typeof first === "string") return first;
-  return "Something went wrong. Please try again.";
-}
+export { errorMessage };
+
+// Loads every page of a paginated list endpoint and returns the items.
+export const fetchAll = (url, params) =>
+  fetchAllPages((u, p) => api.get(u, { params: p }).then((r) => r.data), url, params);
 
 export default api;
