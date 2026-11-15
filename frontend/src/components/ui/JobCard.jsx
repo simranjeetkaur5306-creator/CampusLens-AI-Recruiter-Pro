@@ -1,15 +1,18 @@
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
+import { experienceLabel, jobTypeLabel } from "../../utils/jobType";
 import ScoreRing from "./ScoreRing";
 import SkillChips from "./SkillChips";
 
+// `job` is a normalized recommendation (see services/candidateApi.js).
 export default function JobCard({ job, applied, applying, onApply }) {
-  const hasMatchInfo = job.matchedSkills.length > 0 || job.missingSkills.length > 0;
+  const hasMatchInfo = job.matched.length > 0 || job.missing.length > 0;
+  const meta = [jobTypeLabel(job.jobType), experienceLabel(job.requiredExperience)].filter(Boolean).join(" · ");
 
   return (
     <article className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:shadow-md">
       <div className="flex items-start gap-4">
-        <ScoreRing value={job.matchScore} size={64} />
+        <ScoreRing value={job.matchPercent} size={64} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold text-navy-900">{job.title}</h3>
           <p className="truncate text-sm text-slate-500">{job.company || "Company not specified"}</p>
@@ -18,22 +21,23 @@ export default function JobCard({ job, applied, applying, onApply }) {
               <MapPin size={12} /> {job.location}
             </p>
           )}
+          {meta && <p className="mt-1 text-xs text-slate-500">{meta}</p>}
         </div>
       </div>
 
       <div className="mt-4 flex-1 space-y-3">
         {hasMatchInfo ? (
           <>
-            {job.matchedSkills.length > 0 && (
+            {job.matched.length > 0 && (
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Matched</p>
-                <SkillChips skills={job.matchedSkills} tone="matched" limit={5} />
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Matching skills</p>
+                <SkillChips skills={job.matched} tone="matched" limit={5} />
               </div>
             )}
-            {job.missingSkills.length > 0 && (
+            {job.missing.length > 0 && (
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Missing</p>
-                <SkillChips skills={job.missingSkills} tone="missing" limit={4} />
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Missing skills</p>
+                <SkillChips skills={job.missing} tone="missing" limit={4} />
               </div>
             )}
           </>

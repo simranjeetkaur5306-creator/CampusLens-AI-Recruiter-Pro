@@ -6,28 +6,8 @@ import { EmptyState, ErrorState, Spinner } from "../../components/ui/States";
 import { useAsync } from "../../hooks/useAsync";
 import { getApplications } from "../../services/candidateApi";
 import { formatDate } from "../../utils/format";
+import { jobTypeLabel } from "../../utils/jobType";
 import { statusLabel, statusStyle } from "../../utils/status";
-
-function InterviewLine({ interview }) {
-  const parts = [formatDate(interview.date), interview.time, interview.mode].filter((p) => p && p !== "—");
-  const isLink = /^https?:\/\//i.test(interview.location);
-  return (
-    <div className="mt-2 rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-800">
-      <span className="font-semibold">Interview:</span> {parts.join(" · ") || "Details pending"}
-      {interview.location && (
-        <>
-          {" · "}
-          {isLink ? (
-            <a href={interview.location} target="_blank" rel="noopener noreferrer" className="font-medium underline">Join link</a>
-          ) : (
-            interview.location
-          )}
-        </>
-      )}
-      {interview.details && <p className="mt-1 text-violet-700">{interview.details}</p>}
-    </div>
-  );
-}
 
 export default function Applications() {
   const { data, loading, error, reload } = useAsync(getApplications, []);
@@ -55,12 +35,11 @@ export default function Applications() {
   const q = query.trim().toLowerCase();
   const rows = data
     .filter((a) => status === "all" || a.status === status)
-    .filter((a) => !q || `${a.jobTitle} ${a.company}`.toLowerCase().includes(q))
-    .sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0));
+    .filter((a) => !q || `${a.jobTitle} ${a.company}`.toLowerCase().includes(q));
 
   return (
     <>
-      <PageHeader title="My Applications" subtitle={`${data.length} application${data.length === 1 ? "" : "s"}`} />
+      <PageHeader title="My Applications" subtitle={`${data.length} application${data.length === 1 ? "" : "s"}, newest first`} />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="relative min-w-56 flex-1">
@@ -93,15 +72,17 @@ export default function Applications() {
                     <span className="font-semibold text-navy-900">{a.jobTitle}</span>
                   )}
                   <p className="text-xs text-slate-500">
-                    {a.company ? `${a.company} · ` : ""}Applied {formatDate(a.appliedAt)}
+                    {[a.company, a.location, jobTypeLabel(a.jobType)].filter(Boolean).join(" · ")}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Applied {formatDate(a.appliedAt)}{a.resumeName ? ` with ${a.resumeName}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  {a.matchScore != null && <span className="text-sm font-semibold text-brand-700">{a.matchScore}% match</span>}
+                <div className="flex items-center gap-2">
+                  {!a.jobOpen && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Job closed</span>}
                   <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyle(a.status)}`}>{statusLabel(a.status)}</span>
                 </div>
               </div>
-              {a.interview && <InterviewLine interview={a.interview} />}
             </li>
           ))}
         </ul>

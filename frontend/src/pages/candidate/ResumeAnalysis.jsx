@@ -1,67 +1,55 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { FileText } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ExternalLink, FileText } from "lucide-react";
 import PageHeader from "../../components/ui/PageHeader";
-import SkillChips from "../../components/ui/SkillChips";
-import { EmptyState, ErrorState, Spinner } from "../../components/ui/States";
+import ResumeSections from "../../components/ui/ResumeSections";
+import { EmptyState, ErrorState, InlineError, Spinner } from "../../components/ui/States";
 import { useAsync } from "../../hooks/useAsync";
-import { getResumes } from "../../services/candidateApi";
+import { getResumeDetail, getResumes } from "../../services/candidateApi";
 import { formatDate } from "../../utils/format";
-
-function Section({ title, items }) {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5">
-      <h2 className="font-semibold text-navy-900">{title}</h2>
-      {items.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-400">Not detected</p>
-      ) : (
-        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-slate-700">
-          {items.map((it, i) => <li key={i}>{it}</li>)}
-        </ul>
-      )}
-    </section>
-  );
-}
+import { isHttpUrl } from "../../utils/resumeFormat";
 
 export default function ResumeAnalysis() {
-  const { data, loading, error, reload } = useAsync(getResumes, []);
-  const [selectedId, setSelectedId] = useState("");
+  const [params, setParams] = useSearchParams();
+  const list = useAsync(getResumes, []);
+  const parsed = (list.data ?? []).filter((r) => r.parsingStatus === "success");
+  const selectedId = params.get("resume") || String((parsed.find((r) => r.isActive) ?? parsed[0])?.id ?? "");
+  const detail = useAsync(() => (selectedId ? getResumeDetail(selectedId) : Promise.resolve(null)), [selectedId]);
 
-  if (loading) return <Spinner label="Loading resume analysis…" />;
-  if (error) return <ErrorState message={error} onRetry={reload} />;
+  if (list.loading) return <Spinner label="Loading resumes…" />;
+  if (list.error) return <ErrorState message={list.error} onRetry={list.reload} />;
 
-  if (!data || data.length === 0) {
+  if (parsed.length === 0) {
     return (
       <>
         <PageHeader title="Resume Analysis" />
         <EmptyState
           icon={FileText}
-          title="No resume to analyse"
-          text="Upload a resume to see the skills, education and experience we extract."
+          title="No parsed resume yet"
+          text="Upload a PDF or DOCX resume to see the skills, education and experience we extract."
           action={<Link to="/candidate/resume-upload" className="rounded-lg bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Upload resume</Link>}
         />
       </>
     );
   }
 
-  const resume = data.find((r) => String(r.id) === selectedId) ?? data[0];
-  const contact = [resume.name, resume.email, resume.phone].filter(Boolean);
+  const r = detail.data;
+  const contact = r ? [["Name", r.contact.name], ["Email", r.contact.email], ["Phone", r.contact.phone]].filter(([, v]) => v) : [];
 
   return (
     <>
       <PageHeader
         title="Resume Analysis"
-        subtitle={`${resume.fileName} · uploaded ${formatDate(resume.uploadedAt)}`}
+        subtitle={r ? `${r.fileName} · uploaded ${formatDate(r.uploadedAt)}${r.isActive ? " · active" : ""}` : undefined}
         actions={
-          data.length > 1 && (
+          parsed.length > 1 && (
             <select
-              value={String(resume.id)}
-              onChange={(e) => setSelectedId(e.target.value)}
+              value={selectedId}
+              onChange={(e) => setParams({ resume: e.target.value })}
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-              aria-label="Choose resume version"
+              aria-label="Choose resume"
             >
-              {data.map((r) => (
-                <option key={r.id} value={String(r.id)}>{r.fileName} ({formatDate(r.uploadedAt)})</option>
+              {parsed.map((x) => (
+                <option key={x.id} value={String(x.id)}>{x.fileName} ({formatDate(x.uploadedAt)})</option>
               ))}
             </select>
           )
@@ -72,28 +60,31 @@ export default function ResumeAnalysis() {
         This information is extracted automatically and may contain errors. Unusual layouts can reduce accuracy.
       </p>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="font-semibold text-navy-900">Contact details</h2>
-          {contact.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-400">Not detected</p>
-          ) : (
-            <ul className="mt-3 space-y-1 text-sm text-slate-700">
-              {contact.map((c) => <li key={c}>{c}</li>)}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="font-semibold text-navy-900">Skills ({resume.skills.length})</h2>
-          <div className="mt-3"><SkillChips skills={resume.skills} /></div>
-        </section>
-
-        <Section title="Education" items={resume.education} />
-        <Section title="Experience" items={resume.experience} />
-        <Section title="Projects" items={resume.projects} />
-        <Section title="Certifications" items={resume.certifications} />
-      </div>
+      {detail.loading ? (
+        <Spinner label="Loading analysis…" />
+      ) : detail.error ? (
+        <InlineError what="resume analysis" message={detail.error} />
+      ) : r ? (
+        <div className="space-y-5">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <h2 className="font-semibold text-navy-900">Contact details found</h2>
+            {contact.length === 0 && !isHttpUrl(r.contact.linkedin) && !isHttpUrl(r.contact.github) ? (
+              <p className="mt-2 text-sm text-slate-400">Not detected</p>
+            ) : (
+              <>
+                <ul className="mt-3 space-y-1 text-sm text-slate-700">
+                  {contact.map(([label, value]) => <li key={label}><span className="text-slate-500">{label}:</span> {value}</li>)}
+                </ul>
+                <div className="mt-2 flex gap-4 text-sm font-semibold text-brand-700">
+                  {isHttpUrl(r.contact.linkedin) && <a href={r.contact.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline">LinkedIn <ExternalLink size={14} /></a>}
+                  {isHttpUrl(r.contact.github) && <a href={r.contact.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline">GitHub <ExternalLink size={14} /></a>}
+                </div>
+              </>
+            )}
+          </section>
+          <ResumeSections resume={r} />
+        </div>
+      ) : null}
     </>
   );
 }

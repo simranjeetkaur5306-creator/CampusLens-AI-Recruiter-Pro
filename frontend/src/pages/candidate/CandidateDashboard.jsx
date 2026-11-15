@@ -11,16 +11,10 @@ import { getApplications, getRecommendations, getResumes } from "../../services/
 import { formatDate } from "../../utils/format";
 import { statusLabel, statusStyle } from "../../utils/status";
 
-async function fetchDashboard() {
-  const [resumes, recs, apps] = await Promise.allSettled([
-    getResumes(),
-    getRecommendations(),
-    getApplications(),
-  ]);
+async function load() {
+  const [resumes, recs, apps] = await Promise.allSettled([getResumes(), getRecommendations(), getApplications()]);
   const pick = (r) =>
-    r.status === "fulfilled"
-      ? { data: r.value, error: null }
-      : { data: null, error: errorMessage(r.reason) };
+    r.status === "fulfilled" ? { data: r.value, error: null } : { data: null, error: errorMessage(r.reason) };
   return { resumes: pick(resumes), recs: pick(recs), apps: pick(apps) };
 }
 
@@ -52,48 +46,46 @@ function Card({ title, link, children }) {
 
 export default function CandidateDashboard() {
   const { user } = useAuth();
-  const { data, loading, error, reload } = useAsync(fetchDashboard, []);
+  const { data, loading, error, reload } = useAsync(load, []);
 
   if (loading) return <Spinner label="Loading your dashboard…" />;
   if (error || !data) return <ErrorState message={error} onRetry={reload} />;
 
   const { resumes, recs, apps } = data;
-  const resume = resumes.data?.[0] ?? null;
-  const recList = recs.data ?? [];
+  const resume = resumes.data?.find((r) => r.isActive) ?? null;
+  const matches = recs.data?.items ?? [];
   const appList = apps.data ?? [];
 
-  const scores = recList.map((r) => r.matchScore).filter((s) => s != null);
+  const scores = matches.map((m) => m.matchPercent).filter((s) => s != null);
   const best = scores.length ? Math.max(...scores) : null;
-  const topRecs = [...recList].sort((a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1)).slice(0, 3);
-  const recentApps = [...appList]
-    .sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0))
-    .slice(0, 4);
+  const topMatches = matches.slice(0, 3); // already sorted best first by the API
+  const recentApps = appList.slice(0, 4); // newest first from the API
   const statusCounts = appList.reduce((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
     return acc;
   }, {});
 
-  const name = user?.full_name ?? user?.first_name ?? user?.email ?? "";
+  const name = user?.first_name || user?.email || "";
 
   return (
     <>
       <PageHeader title={`Welcome back${name ? `, ${name}` : ""}`} subtitle="Your resume, matches and applications at a glance." />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={FileText} label="Resume" value={resumes.error ? "—" : resume ? `${resume.skills.length} skills` : "Not uploaded"} />
-        <Stat icon={Sparkles} label="Recommended jobs" value={recs.error ? "—" : recList.length} />
+        <Stat icon={FileText} label="Active resume" value={resumes.error ? "—" : resume ? `${resume.skills.length} skills` : "None"} />
+        <Stat icon={Sparkles} label="Job matches" value={recs.error ? "—" : matches.length} />
         <Stat icon={Briefcase} label="Best match" value={best != null ? `${best}%` : "—"} />
         <Stat icon={ClipboardList} label="Applications" value={apps.error ? "—" : appList.length} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card title="Resume" link={resume ? ["/candidate/resume-analysis", "View analysis"] : null}>
+        <Card title="Active resume" link={resume ? ["/candidate/resume-analysis", "View analysis"] : ["/candidate/resume-upload", "Manage resumes"]}>
           {resumes.error ? (
             <InlineError what="resumes" message={resumes.error} />
           ) : !resume ? (
             <EmptyState
               icon={FileText}
-              title="No resume yet"
+              title="No active resume"
               text="Upload a PDF or DOCX resume to get skills extracted and job matches."
               action={<Link to="/candidate/resume-upload" className="rounded-lg bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800">Upload resume</Link>}
             />
@@ -112,14 +104,14 @@ export default function CandidateDashboard() {
         <Card title="Top job matches" link={["/candidate/recommendations", "See all"]}>
           {recs.error ? (
             <InlineError what="recommendations" message={recs.error} />
-          ) : topRecs.length === 0 ? (
-            <p className="text-sm text-slate-500">No recommendations yet. Upload a resume and publish jobs exist to see matches.</p>
+          ) : topMatches.length === 0 ? (
+            <p className="text-sm text-slate-500">No open jobs to match yet. New matches appear when recruiters publish jobs.</p>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {topRecs.map((j) => (
+              {topMatches.map((j) => (
                 <li key={j.id}>
                   <Link to={`/candidate/jobs/${j.id}`} className="flex items-center gap-4 py-3 hover:bg-slate-50">
-                    <ScoreRing value={j.matchScore} size={56} />
+                    <ScoreRing value={j.matchPercent} size={56} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium text-navy-900">{j.title}</span>
                       <span className="block truncate text-xs text-slate-500">{j.company || "Company not specified"}</span>

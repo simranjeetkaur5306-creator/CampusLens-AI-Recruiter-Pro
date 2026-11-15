@@ -1,130 +1,144 @@
-import api from "./api";
+import api, { fetchAll } from "./api";
 
-// Paths taken from your real `dump_urls.py` output. Edit ONLY this block if routes change.
+// Real backend paths. Edit ONLY this block if a route changes.
 export const CANDIDATE_ENDPOINTS = {
   profile: "/api/candidates/me/",
   resumes: "/api/resumes/",
+  resume: (id) => `/api/resumes/${id}/`,
   resumeUpload: "/api/resumes/upload/",
+  activateResume: (id) => `/api/resumes/${id}/activate/`,
   recommendations: "/api/matching/recommendations/",
   applications: "/api/applications/",
   myApplications: "/api/applications/me/",
-  jobs: "/api/jobs/",
+  job: (id) => `/api/jobs/${id}/`,
   skillGap: (jobId) => `/api/skill-gap/jobs/${jobId}/`,
   aiSummary: (jobId) => `/api/skill-gap/jobs/${jobId}/ai-summary/`,
 };
 
-/* ---------- normalizers: accept several possible backend shapes ---------- */
+/* ---------- small helpers ---------- */
 
-const unwrapList = (data) =>
-  Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
+const names = (list) =>
+  (Array.isArray(list) ? list : []).map((s) => (typeof s === "string" ? s : s?.name ?? s?.skill)).filter(Boolean);
 
-const labelOf = (x) => {
-  if (x == null) return "";
-  if (typeof x === "string") return x.trim();
-  if (typeof x === "number") return String(x);
-  if (typeof x === "object") {
-    return Object.values(x)
-      .filter((v) => typeof v === "string" && v.trim())
-      .join(" · ");
-  }
-  return "";
-};
+const arr = (v) => (Array.isArray(v) ? v : []);
 
-const skillOf = (x) =>
-  x && typeof x === "object" ? x.name ?? x.skill ?? labelOf(x) : labelOf(x);
-
-const asArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
-
-export const toLabels = (v) => asArray(v).map(labelOf).filter(Boolean);
-
-export const toSkills = (v) =>
-  (typeof v === "string" ? v.split(",") : asArray(v)).map(skillOf).filter(Boolean);
-
-// Backend may return 0-1 (cosine) or 0-100. Values <= 1 are treated as fractions.
-export function normalizeScore(v) {
+const percent = (v) => {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
-  if (Number.isNaN(n)) return null;
-  return Math.max(0, Math.min(100, Math.round(n <= 1 ? n * 100 : n)));
-}
+  return Number.isNaN(n) ? null : Math.max(0, Math.min(100, Math.round(n)));
+};
 
+/* ---------- normalizers (shapes taken from the backend serializers) ---------- */
+
+// Works for both the resume list (no parsed sections) and the resume detail.
 export function normalizeResume(r) {
-  const file = r.file ? decodeURIComponent(String(r.file).split("/").pop()) : "";
+  const c = r.contact && typeof r.contact === "object" ? r.contact : {};
   return {
     id: r.id,
-    fileName: r.original_filename ?? r.file_name ?? (file || "Resume"),
-    uploadedAt: r.uploaded_at ?? r.created_at ?? null,
-    name: r.name ?? r.full_name ?? "",
-    email: r.email ?? "",
-    phone: r.phone ?? "",
-    skills: toSkills(r.skills ?? r.extracted_skills),
-    education: toLabels(r.education),
-    experience: toLabels(r.experience),
-    projects: toLabels(r.projects),
-    certifications: toLabels(r.certifications),
+    fileName: r.original_filename ?? "Resume",
+    fileType: r.file_type ?? "",
+    fileSize: r.file_size ?? null,
+    uploadedAt: r.uploaded_at ?? null,
+    isActive: Boolean(r.is_active),
+    parsingStatus: r.parsing_status ?? "",
+    parsingError: r.parsing_error ?? "",
+    contact: {
+      name: c.name ?? "",
+      email: c.email ?? "",
+      phone: c.phone ?? "",
+      linkedin: c.linkedin ?? "",
+      github: c.github ?? "",
+    },
+    skills: names(r.skills),
+    education: arr(r.education),
+    experience: arr(r.experience),
+    projects: arr(r.projects),
+    certifications: arr(r.certifications),
   };
 }
 
-export function normalizeJob(item) {
-  const job = item.job ?? item.job_description ?? item;
+export function normalizeJob(j) {
   return {
-    id: job.id,
-    title: job.title ?? "Untitled role",
-    company: job.company_name ?? job.recruiter?.company_name ?? job.company ?? "",
-    location: job.location ?? "",
-    description: job.description ?? "",
-    experienceLevel: job.experience_level ?? "",
-    requiredSkills: toSkills(job.required_skills ?? job.skills),
-    matchScore: normalizeScore(
-      item.match_score ?? item.match_percentage ?? item.score ?? item.similarity_score ??
-        item.similarity ?? item.cosine_similarity ?? job.match_score
-    ),
-    matchedSkills: toSkills(item.matched_skills),
-    missingSkills: toSkills(item.missing_skills),
+    id: j.id,
+    title: j.job_title ?? "Untitled role",
+    company: j.company_name ?? "",
+    location: j.location ?? "",
+    jobType: j.job_type ?? "",
+    description: j.description ?? "",
+    requiredSkills: names(j.required_skills),
+    requiredExperience: j.required_experience ?? 0,
+    requiredEducation: j.required_education ?? "",
+    salaryRange: j.salary_range ?? "",
+    isActive: j.is_active !== false,
   };
 }
 
-function normalizeInterview(i) {
-  if (!i || typeof i !== "object") return null;
+// One row of GET /api/matching/recommendations/
+export function normalizeRecommendation(row) {
   return {
-    date: i.interview_date ?? i.date ?? null,
-    time: i.interview_time ?? i.time ?? "",
-    mode: i.interview_mode ?? i.mode ?? "",
-    location: i.meeting_link ?? i.location ?? "",
-    details: i.details ?? "",
+    ...normalizeJob(row.job ?? {}),
+    matchPercent: percent(row.match_percent),
+    matched: names(row.matching_skills),
+    missing: names(row.missing_skills),
+    alreadyApplied: Boolean(row.already_applied),
   };
 }
 
 export function normalizeApplication(a) {
-  const job = typeof a.job === "object" && a.job ? a.job : a.job_description ?? {};
+  const job = a.job ?? {};
+  const resume = a.resume ?? null;
   return {
     id: a.id,
-    jobId: job.id ?? (typeof a.job !== "object" ? a.job : undefined) ?? a.job_id,
-    jobTitle: job.title ?? a.job_title ?? "Job",
-    company: job.company_name ?? a.company_name ?? "",
     status: String(a.status ?? "applied").toLowerCase(),
-    appliedAt: a.applied_at ?? a.created_at ?? null,
-    matchScore: normalizeScore(a.match_score ?? a.score),
-    interview: normalizeInterview(a.interview ?? (Array.isArray(a.interviews) ? a.interviews[0] : null)),
+    appliedAt: a.applied_at ?? null,
+    jobId: job.id ?? null,
+    jobTitle: job.job_title ?? "Job",
+    company: job.company_name ?? "",
+    location: job.location ?? "",
+    jobType: job.job_type ?? "",
+    jobOpen: job.is_active !== false,
+    resumeName: resume?.original_filename ?? "",
   };
 }
+
+const gapRows = (list) =>
+  arr(list).map((r) => ({
+    skill: r.skill ?? "",
+    category: r.category ?? "",
+    note: r.evidence?.note ?? "",
+    basedOn: names(r.evidence?.skills),
+  }));
 
 export function normalizeGap(d) {
   return {
-    matched: toSkills(d.matched_skills ?? d.available_skills ?? d.matched ?? d.available),
-    partial: toSkills(d.partial_skills ?? d.partially_matched_skills ?? d.partial),
-    missing: toSkills(d.missing_skills ?? d.missing),
-    recommendations: toLabels(d.recommendations ?? d.learning_recommendations ?? d.suggestions),
-    summary: typeof d.summary === "string" ? d.summary : d.ai_summary ?? "",
+    jobId: d.job?.id ?? null,
+    jobTitle: d.job?.job_title ?? "",
+    resumeName: d.resume?.original_filename ?? "",
+    resumeActive: Boolean(d.resume?.is_active),
+    summary: d.summary ?? "",
+    total: d.total_required ?? 0,
+    coverage: percent(d.coverage_percent),
+    coverageRule: d.coverage_rule ?? "",
+    matched: gapRows(d.matched),
+    partial: gapRows(d.partial),
+    missing: gapRows(d.missing),
+    plan: arr(d.learning_plan).map((p) => ({
+      priority: p.priority ?? 0,
+      skill: p.skill ?? "",
+      status: p.status ?? "",
+      learnAfter: names(p.learn_after),
+      topics: arr(p.topics).filter((t) => typeof t === "string"),
+      projectIdea: p.project_idea ?? "",
+      source: p.source ?? "",
+    })),
+    disclaimer: d.disclaimer ?? "",
   };
 }
 
-/* ---------- API calls ---------- */
+/* ---------- profile ---------- */
 
 export async function getProfile() {
   const { data } = await api.get(CANDIDATE_ENDPOINTS.profile);
-  if (Array.isArray(data)) return data[0] ?? {};
-  if (Array.isArray(data?.results)) return data.results[0] ?? {};
   return data ?? {};
 }
 
@@ -133,82 +147,74 @@ export async function updateProfile(changes) {
   return data;
 }
 
+/* ---------- resumes ---------- */
+
 export async function getResumes() {
-  const { data } = await api.get(CANDIDATE_ENDPOINTS.resumes);
-  return unwrapList(data)
-    .map(normalizeResume)
-    .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+  const rows = await fetchAll(CANDIDATE_ENDPOINTS.resumes);
+  return rows.map(normalizeResume);
 }
 
+export async function getResumeDetail(id) {
+  const { data } = await api.get(CANDIDATE_ENDPOINTS.resume(id));
+  return normalizeResume(data);
+}
+
+// Resolves to { message, resume }. A file with unreadable text is still saved, with parsingStatus "failed".
 export async function uploadResume(file, onProgress) {
   const form = new FormData();
-  form.append("file", file); // field name assumed: "file"
+  form.append("file", file);
   const { data } = await api.post(CANDIDATE_ENDPOINTS.resumeUpload, form, {
     timeout: 120000,
     onUploadProgress: (e) => {
       if (e.total && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
     },
   });
-  return normalizeResume(data?.resume ?? data);
+  return { message: data?.message ?? "", resume: normalizeResume(data?.resume ?? {}) };
 }
 
-export async function getRecommendations() {
-  const { data } = await api.get(CANDIDATE_ENDPOINTS.recommendations);
-  return unwrapList(data).map(normalizeJob);
+export async function activateResume(id) {
+  await api.post(CANDIDATE_ENDPOINTS.activateResume(id), {});
 }
 
-export async function getApplications() {
-  const { data } = await api.get(CANDIDATE_ENDPOINTS.myApplications);
-  return unwrapList(data).map(normalizeApplication);
+export async function deleteResume(id) {
+  await api.delete(CANDIDATE_ENDPOINTS.resume(id));
+}
+
+/* ---------- jobs, recommendations, applications ---------- */
+
+// includeApplied=false (default) hides jobs you already applied to. The API returns at most 50.
+export async function getRecommendations({ includeApplied = false, limit = 50, minPercent } = {}) {
+  const params = { limit, include_applied: includeApplied };
+  if (minPercent) params.min_percent = minPercent;
+  const { data } = await api.get(CANDIDATE_ENDPOINTS.recommendations, { params });
+  return {
+    resumeName: data?.resume?.original_filename ?? "",
+    items: arr(data?.results).map(normalizeRecommendation),
+  };
 }
 
 export async function getJob(id) {
-  const { data } = await api.get(`${CANDIDATE_ENDPOINTS.jobs}${id}/`);
+  const { data } = await api.get(CANDIDATE_ENDPOINTS.job(id));
   return normalizeJob(data);
 }
 
-// Sends { job: id }. If the serializer asks for "job_id" instead, it retries once with that.
+export async function getApplications() {
+  const rows = await fetchAll(CANDIDATE_ENDPOINTS.myApplications);
+  return rows.map(normalizeApplication);
+}
+
 export async function applyToJob(jobId) {
-  try {
-    const { data } = await api.post(CANDIDATE_ENDPOINTS.applications, { job: jobId });
-    return data;
-  } catch (err) {
-    const d = err.response?.data;
-    if (err.response?.status === 400 && d && typeof d === "object" && "job_id" in d) {
-      const { data } = await api.post(CANDIDATE_ENDPOINTS.applications, { job_id: jobId });
-      return data;
-    }
-    throw err;
-  }
+  const { data } = await api.post(CANDIDATE_ENDPOINTS.applications, { job: jobId });
+  return normalizeApplication(data?.application ?? {});
 }
 
-export async function getSkillGap(jobId) {
-  const { data } = await api.get(CANDIDATE_ENDPOINTS.skillGap(jobId));
-  return normalizeGap(data?.skill_gap ?? data?.analysis ?? data);
-}
-
-// LLM-written summary. Tries POST first, falls back to GET if the route is GET-only.
-export async function getAiSummary(jobId) {
-  const url = CANDIDATE_ENDPOINTS.aiSummary(jobId);
-  let res;
-  try {
-    res = await api.post(url, {}, { timeout: 90000 });
-  } catch (err) {
-    if (err.response?.status !== 405) throw err;
-    res = await api.get(url, { timeout: 90000 });
-  }
-  const d = res.data;
-  const s = typeof d === "string" ? d : d?.summary ?? d?.ai_summary ?? d?.text;
-  return typeof s === "string" ? s : s?.summary ?? "";
-}
-
-// Jobs the candidate can pick in selectors: recommended + already applied (deduplicated).
+// Jobs the candidate can pick in selectors: matched jobs + jobs already applied to (deduplicated).
 export async function getJobOptions() {
-  const [recs, apps] = await Promise.allSettled([getRecommendations(), getApplications()]);
+  const [recs, apps] = await Promise.allSettled([getRecommendations({ includeApplied: true }), getApplications()]);
   if (recs.status === "rejected" && apps.status === "rejected") throw recs.reason;
   const map = new Map();
   if (recs.status === "fulfilled") {
-    recs.value.forEach((j) => map.set(String(j.id), { id: j.id, title: j.title, company: j.company }));
+    recs.value.items.forEach((j) => map.set(String(j.id), { id: j.id, title: j.title, company: j.company }));
   }
   if (apps.status === "fulfilled") {
     apps.value.forEach((a) => {
@@ -218,4 +224,18 @@ export async function getJobOptions() {
     });
   }
   return [...map.values()];
+}
+
+/* ---------- skill gap ---------- */
+
+// Rule-based comparison (no AI). Always grounded in the skills found on the resume.
+export async function getSkillGap(jobId) {
+  const { data } = await api.get(CANDIDATE_ENDPOINTS.skillGap(jobId));
+  return normalizeGap(data ?? {});
+}
+
+// POST, rate limited, calls the LLM. The lists still come from the rule-based analysis.
+export async function getAiSummary(jobId) {
+  const { data } = await api.post(CANDIDATE_ENDPOINTS.aiSummary(jobId), {}, { timeout: 90000 });
+  return { text: data?.ai_summary ?? "", model: data?.model_name ?? "", note: data?.note ?? "" };
 }
