@@ -1,6 +1,7 @@
 from django.db import IntegrityError, transaction
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.http import content_disposition_header
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -10,6 +11,8 @@ from rest_framework.views import APIView
 
 from accounts.permissions import IsCandidate, IsRecruiter
 from candidates.models import Candidate
+from interviews.models import Interview
+from notifications import services as notifications
 from resumes.models import Resume
 
 from .models import Application
@@ -51,8 +54,16 @@ class ApplyView(APIView):
         except IntegrityError:  # two requests at the same moment
             raise already
 
+        # Emails never block or undo the application; the response tells the truth about delivery.
+        confirmation = notifications.application_received(application)
+        notifications.new_application_for_recruiter(application)
+
         return Response(
-            {"message": "Application submitted.", "application": ApplicationSerializer(application).data},
+            {
+                "message": "Application submitted.",
+                "application": ApplicationSerializer(application).data,
+                "email": {"status": confirmation, "recipient": "you"},
+            },
             status=status.HTTP_201_CREATED,
         )
 
@@ -64,7 +75,11 @@ class MyApplicationsView(generics.ListAPIView):
     permission_classes = CANDIDATE_ONLY
 
     def get_queryset(self):
-        return Application.objects.filter(candidate__user=self.request.user).select_related("job", "resume")
+        return (
+            Application.objects.filter(candidate__user=self.request.user)
+            .select_related("job", "resume")
+            .prefetch_related("interviews")
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -121,8 +136,11 @@ class ReceivedApplicationDetailView(generics.RetrieveAPIView):
 class ApplicationStatusView(APIView):
     """PATCH /api/applications/<id>/status/  {"status": "shortlisted" | "rejected" | "applied"}
 
-    The recruiter decides; nothing here is automatic. "interview_scheduled" is not accepted
-    because it will be set by interview scheduling (Phase 16).
+    The recruiter decides; nothing here is automatic.
+    * "interview_scheduled" cannot be chosen here; scheduling an interview sets it.
+    * While an interview is scheduled, only "rejected" is possible (it cancels that interview).
+      To go back to "shortlisted", cancel the interview first.
+    * Shortlisting and rejecting email the candidate; the response says whether the email was sent.
     """
 
     permission_classes = RECRUITER_ONLY
@@ -133,10 +151,30 @@ class ApplicationStatusView(APIView):
         serializer = ApplicationStatusSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_status = serializer.validated_data["status"]
+
+        email_status = None
         if application.status != new_status:
-            application.status = new_status
-            application.save(update_fields=["status", "updated_at"])
-        return Response(ReceivedApplicationSerializer(application).data)
+            cancelled = 0
+            with transaction.atomic():
+                scheduled = application.interviews.filter(status=Interview.Status.SCHEDULED)
+                if scheduled.exists():
+                    if new_status != Application.Status.REJECTED:
+                        raise ValidationError(
+                            {"status": ["This application has a scheduled interview. Cancel the interview first, or reject the application."]}
+                        )
+                    cancelled = scheduled.update(status=Interview.Status.CANCELLED, updated_at=timezone.now())
+                application.status = new_status
+                application.save(update_fields=["status", "updated_at"])
+
+            if new_status == Application.Status.SHORTLISTED:
+                email_status = notifications.application_shortlisted(application)
+            elif new_status == Application.Status.REJECTED:
+                email_status = notifications.application_rejected(application, interviews_cancelled=cancelled)
+
+        payload = dict(ReceivedApplicationSerializer(application).data)
+        if email_status is not None:
+            payload["email"] = {"status": email_status, "recipient": "candidate"}
+        return Response(payload)
 
 
 class ApplicationResumeFileView(APIView):

@@ -29,10 +29,26 @@ class JobSummarySerializer(serializers.ModelSerializer):
 class ApplicationSerializer(serializers.ModelSerializer):
     job = JobSummarySerializer(read_only=True)
     resume = serializers.SerializerMethodField()
+    next_interview = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
-        fields = ["id", "status", "applied_at", "job", "resume"]
+        fields = ["id", "status", "applied_at", "job", "resume", "next_interview"]
+
+    def get_next_interview(self, obj):
+        """The earliest still-scheduled interview, or None. Uses prefetched interviews (no extra query per row)."""
+        scheduled = [i for i in obj.interviews.all() if i.status == "scheduled"]
+        if not scheduled:
+            return None
+        interview = min(scheduled, key=lambda i: i.scheduled_at)
+        return {
+            "id": interview.id,
+            "scheduled_at": interview.scheduled_at,
+            "duration_minutes": interview.duration_minutes,
+            "mode": interview.mode,
+            "location": interview.location,
+            "details": interview.details,
+        }
 
     def get_resume(self, obj):
         if obj.resume is None:
@@ -51,7 +67,7 @@ class ApplicationStatusSerializer(StrictWritableFieldsMixin, serializers.Seriali
     def validate_status(self, value):
         if value == Application.Status.INTERVIEW_SCHEDULED:
             raise serializers.ValidationError(
-                "This status is set when an interview is scheduled, which is not available yet."
+                "This status is set automatically when you schedule an interview."
             )
         return value
 

@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     "applications",
     "skillgap",
     "interviews",
+    "analytics",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -171,3 +173,15 @@ GEMINI_API_KEY = "" if TESTING else os.getenv("GEMINI_API_KEY", "")  # tests nev
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_TIMEOUT_SECONDS = float(os.getenv("GEMINI_TIMEOUT_SECONDS", "60"))
 GEMINI_MAX_RETRIES = 2  # retried with exponential backoff only on rate limits, timeouts and server errors
+
+# --- Email (Phase 16). Values come from the root .env file; nothing secret is written here. ---
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))  # seconds; a slow mail server cannot hang a request for long
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL") or EMAIL_HOST_USER or "CampusLens AI <noreply@campuslens.local>"
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")  # used for links inside emails
